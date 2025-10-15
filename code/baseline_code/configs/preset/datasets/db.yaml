@@ -33,11 +33,11 @@ transforms:
     _target_: ${dataset_path}.DBTransforms
     transforms:
       - _target_: albumentations.LongestMaxSize
-        max_size: 640
+        max_size: 320
         p: 1.0
       - _target_: albumentations.PadIfNeeded
-        min_width: 640
-        min_height: 640
+        min_width: 320
+        min_height: 320
         border_mode: 0
         p: 1.0
       - _target_: albumentations.HorizontalFlip
@@ -57,11 +57,11 @@ transforms:
     _target_: ${dataset_path}.DBTransforms
     transforms:
       - _target_: albumentations.LongestMaxSize
-        max_size: 640
+        max_size: 320
         p: 1.0
       - _target_: albumentations.PadIfNeeded
-        min_width: 640
-        min_height: 640
+        min_width: 320
+        min_height: 320
         border_mode: 0
         p: 1.0
       - _target_: albumentations.Normalize
@@ -75,11 +75,11 @@ transforms:
     _target_: ${dataset_path}.DBTransforms
     transforms:
       - _target_: albumentations.LongestMaxSize
-        max_size: 640
+        max_size: 320
         p: 1.0
       - _target_: albumentations.PadIfNeeded
-        min_width: 640
-        min_height: 640
+        min_width: 320
+        min_height: 320
         border_mode: 0
         p: 1.0
       - _target_: albumentations.Normalize
@@ -93,11 +93,11 @@ transforms:
     _target_: ${dataset_path}.DBTransforms
     transforms:
       - _target_: albumentations.LongestMaxSize
-        max_size: 640
+        max_size: 320
         p: 1.0
       - _target_: albumentations.PadIfNeeded
-        min_width: 640
-        min_height: 640
+        min_width: 320
+        min_height: 320
         border_mode: 0
         p: 1.0
       - _target_: albumentations.Normalize
