@@ -28,6 +28,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from ocr.lightning_modules import get_pl_modules_by_cfg  # noqa: E402
 from ocr.utils.console_logging import setup_console_logging  # noqa: E402
+from ocr.utils.progress_bar import FourDecimalProgressBar  # noqa: E402
 
 CONFIG_DIR = os.environ.get('OP_CONFIG_DIR') or '../configs'
 
@@ -145,6 +146,7 @@ def train(config):
         )
 
         callbacks = [
+            FourDecimalProgressBar(),
             LearningRateMonitor(logging_interval='step'),
             checkpoint_callback,
         ]
