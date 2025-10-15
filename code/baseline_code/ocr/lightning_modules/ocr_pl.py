@@ -217,9 +217,6 @@ class OCRDataPLModule(pl.LightningDataModule):
         if worker_init_fn is None:
             resolved_cfg["worker_init_fn"] = self._build_worker_init_fn(seed_offset)
 
-        resolved_cfg["num_workers"] = 0
-        resolved_cfg.pop("persistent_workers", None)
-
         if resolved_cfg.get("generator") is None:
             generator = torch.Generator()
             generator.manual_seed(self.seed + seed_offset)
