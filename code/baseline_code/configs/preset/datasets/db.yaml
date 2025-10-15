@@ -54,7 +54,6 @@ transforms:
         rotate_limit: 15
         interpolation: 1
         border_mode: 0
-        value: 0
         p: 0.5
       - _target_: albumentations.Normalize
         mean: [0.485, 0.456, 0.406]
