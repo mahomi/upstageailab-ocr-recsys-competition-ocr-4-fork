@@ -8,21 +8,25 @@ datasets:
     image_path: ${dataset_base_path}images/train
     annotation_path: ${dataset_base_path}jsons/train.json
     transform: ${transforms.train_transform}
+    seed: ${seed}
   val_dataset:
     _target_: ${dataset_path}.OCRDataset
     image_path: ${dataset_base_path}images/val
     annotation_path: ${dataset_base_path}jsons/val.json
     transform: ${transforms.val_transform}
+    seed: ${seed}
   test_dataset:
     _target_: ${dataset_path}.OCRDataset
     image_path: ${dataset_base_path}images/val
     annotation_path: ${dataset_base_path}jsons/val.json
     transform: ${transforms.test_transform}
+    seed: ${seed}
   predict_dataset:
     _target_: ${dataset_path}.OCRDataset
     image_path: ${dataset_base_path}images/test
     annotation_path: null
     transform: ${transforms.test_transform}
+    seed: ${seed}
 
 transforms:
   train_transform:
@@ -36,70 +40,6 @@ transforms:
         min_height: 640
         border_mode: 0
         p: 1.0
-      - _target_: albumentations.HorizontalFlip
-        p: 0.5
-      # - _target_: albumentations.VerticalFlip
-      #   p: 0.5
-      # - _target_: albumentations.ShiftScaleRotate
-      #   shift_limit: 0.0625
-      #   scale_limit: 0.1
-      #   rotate_limit: 15
-      #   p: 0.5
-      # 색상/밝기 조정 증강
-      - _target_: albumentations.RandomBrightnessContrast
-        brightness_limit: 0.2772984123453732
-        contrast_limit: 0.283989673632353
-        p: 0.3384684186607359
-      # - _target_: albumentations.ColorJitter
-      #   brightness: 0.1482166002922425
-      #   contrast: 0.1380738907923448
-      #   saturation: 0.03303697914933371
-      #   hue: 0.093762861716502
-      #   p: 0.024452081273023007
-      # - _target_: albumentations.RandomGamma
-      #   gamma_limit: [82, 128]
-      #   p: 0.122251369866415
-      # - _target_: albumentations.HueSaturationValue
-      #   hue_shift_limit: 20
-      #   sat_shift_limit: 30
-      #   val_shift_limit: 20
-      #   p: 0.3
-      # 블러/노이즈 증강
-      # - _target_: albumentations.GaussianBlur
-      #   blur_limit: 5
-      #   p: 0.1896680736951049
-      # - _target_: albumentations.MotionBlur
-      #   blur_limit: [3, 7]
-      #   p: 0.2
-      # - _target_: albumentations.GaussNoise
-      #   std_range: [0.02, 0.08]
-      #   mean_range: [0.0, 0.0]
-      #   p: 0.2
-      # 이미지 품질 증강
-      # - _target_: albumentations.ImageCompression
-      #   quality_range: [75, 100]
-      #   p: 0.2
-      # - _target_: albumentations.Sharpen
-      #   alpha: [0.2, 0.5]
-      #   lightness: [0.5, 1.0]
-      #   p: 0.2
-      # - _target_: albumentations.Downscale
-      #   scale_range: [0.75, 0.95]
-      #   p: 0.2
-      # 날씨/조명 효과 증강
-      # - _target_: albumentations.RandomShadow
-      #   shadow_roi: [0, 0.5, 1, 1]
-      #   num_shadows_limit: [2, 4]
-      #   shadow_dimension: 6
-      #   p: 0.0558550781178635
-      # - _target_: albumentations.PlasmaShadow
-      #   shadow_intensity_range: [0.3, 0.7]
-      #   roughness: 3.0
-      #   p: 0.2
-      # - _target_: albumentations.RandomFog
-      #   fog_coef_range: [0.1, 0.3]
-      #   alpha_coef: 0.08
-      #   p: 0.2
       - _target_: albumentations.Normalize
         mean: [0.485, 0.456, 0.406]
         std: [0.229, 0.224, 0.225]

@@ -1,9 +1,11 @@
 import os
 import sys
 import warnings
+import random
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
+import numpy as np
 
 load_dotenv()
 
@@ -30,6 +32,67 @@ from ocr.utils.console_logging import setup_console_logging  # noqa: E402
 CONFIG_DIR = os.environ.get('OP_CONFIG_DIR') or '../configs'
 
 
+def configure_reproducibility(seed: int) -> None:
+    """Configure deterministic behaviour across python, numpy, and torch."""
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    os.environ.setdefault("PL_SEED_WORKERS", "1")
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
+    os.environ.setdefault("MKL_NUM_THREADS", "1")
+
+    random.seed(seed)
+    np.random.seed(seed)
+
+    try:
+        import cv2
+        cv2.setRNGSeed(seed)
+    except ImportError:
+        pass
+    try:
+        import albumentations as A
+        if hasattr(A, "set_seed"):
+            A.set_seed(seed)
+    except ImportError:
+        pass
+
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        try:
+            torch.backends.cuda.matmul.allow_tf32 = False
+            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
+        except AttributeError:
+            pass
+
+    try:
+        torch.use_deterministic_algorithms(True)
+    except (AttributeError, RuntimeError):
+        try:
+            torch.use_deterministic_algorithms(True, warn_only=True)
+        except (AttributeError, RuntimeError):
+            pass
+
+    if hasattr(torch, "set_deterministic_debug_mode"):
+        try:
+            torch.set_deterministic_debug_mode(True)
+        except RuntimeError:
+            pass
+
+    if hasattr(torch.backends, "cudnn"):
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        try:
+            torch.backends.cudnn.allow_tf32 = False
+        except AttributeError:
+            pass
+
+    if hasattr(torch, "set_num_threads"):
+        torch.set_num_threads(1)
+    if hasattr(torch, "set_num_interop_threads"):
+        torch.set_num_interop_threads(1)
+
+
 @hydra.main(config_path=CONFIG_DIR, config_name='train', version_base='1.2')
 def train(config):
     """
@@ -49,7 +112,9 @@ def train(config):
     best_epoch = None
 
     try:
-        pl.seed_everything(config.get("seed", 42), workers=True)
+        seed = config.get("seed", 42)
+        configure_reproducibility(seed)
+        pl.seed_everything(seed, workers=True)
 
         model_module, data_module = get_pl_modules_by_cfg(config)
 

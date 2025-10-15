@@ -1,5 +1,6 @@
 import numpy as np
 import json
+import random
 from datetime import datetime
 from pathlib import Path
 import lightning.pytorch as pl
@@ -8,6 +9,8 @@ from collections import defaultdict
 from collections import OrderedDict
 from torch.utils.data import DataLoader
 from hydra.utils import instantiate
+from omegaconf import OmegaConf, DictConfig
+import torch
 from ocr.metrics import CLEvalMetric
 from ocr.utils.convert_submission import convert_json_to_csv
 
@@ -169,24 +172,86 @@ class OCRDataPLModule(pl.LightningDataModule):
         self.dataset = dataset
         self.config = config
         self.collate_fn = instantiate(self.config.collate_fn)
+        self.seed = int(getattr(config, "seed", 42))
+        self._set_initial_epochs()
 
     def train_dataloader(self):
         train_loader_config = self.config.dataloaders.train_dataloader
         self.collate_fn.inference_mode = False
-        return DataLoader(self.dataset['train'], collate_fn=self.collate_fn, **train_loader_config)
+        return self._create_dataloader(
+            dataset=self.dataset['train'],
+            loader_config=train_loader_config,
+            seed_offset=0,
+        )
 
     def val_dataloader(self):
         val_loader_config = self.config.dataloaders.val_dataloader
         self.collate_fn.inference_mode = False
-        return DataLoader(self.dataset['val'], collate_fn=self.collate_fn, **val_loader_config)
+        return self._create_dataloader(
+            dataset=self.dataset['val'],
+            loader_config=val_loader_config,
+            seed_offset=10_000,
+        )
 
     def test_dataloader(self):
         test_loader_config = self.config.dataloaders.test_dataloader
         self.collate_fn.inference_mode = False
-        return DataLoader(self.dataset['test'], collate_fn=self.collate_fn, **test_loader_config)
+        return self._create_dataloader(
+            dataset=self.dataset['test'],
+            loader_config=test_loader_config,
+            seed_offset=20_000,
+        )
 
     def predict_dataloader(self):
         predict_loader_config = self.config.dataloaders.predict_dataloader
         self.collate_fn.inference_mode = True
-        return DataLoader(self.dataset['predict'], collate_fn=self.collate_fn,
-                          **predict_loader_config)
+        return self._create_dataloader(
+            dataset=self.dataset['predict'],
+            loader_config=predict_loader_config,
+            seed_offset=30_000,
+        )
+
+    def _create_dataloader(self, dataset, loader_config, seed_offset):
+        resolved_cfg = self._resolve_loader_config(loader_config)
+        worker_init_fn = resolved_cfg.get("worker_init_fn")
+        if worker_init_fn is None:
+            resolved_cfg["worker_init_fn"] = self._build_worker_init_fn(seed_offset)
+
+        resolved_cfg["num_workers"] = 0
+        resolved_cfg.pop("persistent_workers", None)
+
+        if resolved_cfg.get("generator") is None:
+            generator = torch.Generator()
+            generator.manual_seed(self.seed + seed_offset)
+            resolved_cfg["generator"] = generator
+
+        return DataLoader(
+            dataset,
+            collate_fn=self.collate_fn,
+            **resolved_cfg,
+        )
+
+    def _build_worker_init_fn(self, seed_offset):
+        def seed_worker(worker_id):
+            base_seed = torch.initial_seed()
+            worker_seed = base_seed % 2**32
+            np.random.seed(worker_seed)
+            random.seed(worker_seed)
+
+        return seed_worker
+
+    def on_train_epoch_start(self):
+        if hasattr(self.dataset['train'], "set_epoch"):
+            self.dataset['train'].set_epoch(self.trainer.current_epoch if self.trainer else 0)
+
+    def _set_initial_epochs(self):
+        for key in ['train', 'val', 'test', 'predict']:
+            dataset = self.dataset.get(key)
+            if hasattr(dataset, "set_epoch"):
+                dataset.set_epoch(0)
+
+    @staticmethod
+    def _resolve_loader_config(loader_config):
+        if isinstance(loader_config, DictConfig):
+            return dict(OmegaConf.to_container(loader_config, resolve=True))
+        return dict(loader_config)
