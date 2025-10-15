@@ -344,3 +344,25 @@ PlasmaShadow
        test/hmean           0.9623655676841736
      test/precision         0.9629773497581482
        test/recall          0.9636946320533752
+-------
+기본 모델 1에폭 - rbc증강 파라미터 개선 및 시드고정 재현성확보후
+Evaluation: 100%|##########| 404/404 [01:39<00:00,  4.06it/s]num=u5a8, val/recall=0.8053, val/precision=0.9056, val/hmean=0.8452]
+Evaluation: 100%|##########| 404/404 [01:43<00:00,  3.89it/s]num=u5a8, val/recall=0.9083, val/precision=0.9354, val/hmean=0.9186]
+Evaluation: 100%|##########| 404/404 [01:43<00:00,  3.90it/s]num=u5a8, val/recall=0.9426, val/precision=0.9480, val/hmean=0.9434]
+Evaluation: 100%|##########| 404/404 [01:44<00:00,  3.88it/s]num=u5a8, val/recall=0.9530, val/precision=0.9550, val/hmean=0.9527]
+Evaluation: 100%|##########| 404/404 [01:42<00:00,  3.96it/s]num=u5a8, val/recall=0.9470, val/precision=0.9617, val/hmean=0.9527]
+Evaluation: 100%|##########| 404/404 [01:44<00:00,  3.87it/s]num=u5a8, val/recall=0.9645, val/precision=0.9595, val/hmean=0.9610]
+Evaluation: 100%|##########| 404/404 [01:39<00:00,  4.05it/s]num=u5a8, val/recall=0.9531, val/precision=0.9682, val/hmean=0.9593]
+Evaluation: 100%|##########| 404/404 [01:44<00:00,  3.88it/s]num=u5a8, val/recall=0.9616, val/precision=0.9630, val/hmean=0.9614]
+Evaluation: 100%|##########| 404/404 [01:43<00:00,  3.91it/s]num=u5a8, val/recall=0.9696, val/precision=0.9651, val/hmean=0.9667]
+Epoch 9: 100%|##########| 205/205 [04:36<00:00,  0.74it/s, v_num=u5a8, val/recall=0.9723, val/precision=0.9670, val/hmean=0.9691]
+Using best checkpoint from epoch: 9                                     
+Best checkpoint path: /root/dev/upstageailab-ocr-recsys-competition-ocr-4-fork/outputs/2025-10-15/14-58-17/checkpoints/epoch=9-step=2050.ckpt
+Evaluation: 100%|##########| 404/404 [01:43<00:00,  3.91it/s].65it/s]
+Testing DataLoader 0: 100%|##########| 26/26 [01:59<00:00,  0.22it/s]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       Test metric             DataLoader 0
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       test/hmean           0.9690506458282471
+     test/precision         0.9669589996337891
+       test/recall          0.9723448753356934
