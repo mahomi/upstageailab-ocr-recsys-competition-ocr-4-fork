@@ -71,10 +71,10 @@ class OCRDataset(Dataset):
         if self.transform is None:
             raise ValueError("Transform function is a required value.")
 
-        self._apply_deterministic_seed(idx)
+        seed_value = self._apply_deterministic_seed(idx)
 
         # Image transform
-        transformed = self.transform(image=np.array(image), polygons=polygons)
+        transformed = self.transform(image=np.array(image), polygons=polygons, seed=seed_value)
         item.update(image=transformed['image'],
                     polygons=transformed['polygons'],
                     inverse_matrix=transformed['inverse_matrix'],
@@ -105,7 +105,7 @@ class OCRDataset(Dataset):
 
     def _apply_deterministic_seed(self, idx: int):
         if self.seed is None:
-            return
+            return None
 
         dataset_size = max(self._dataset_size, 1)
         offset = (self._epoch * dataset_size) + idx
@@ -114,9 +114,9 @@ class OCRDataset(Dataset):
 
         random.seed(seed_value)
         np.random.seed(seed_value)
-        torch.manual_seed(seed_value)
         try:
             import cv2
             cv2.setRNGSeed(seed_value)
         except ImportError:
             pass
+        return seed_value

@@ -2,16 +2,54 @@ import numpy as np
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from collections import OrderedDict
+import random
+
+MAX_VALUES_BY_DTYPE = {
+    np.dtype("uint8"): 255,
+    np.dtype("uint16"): 65535,
+    np.dtype("float32"): 1.0,
+    np.dtype("float64"): 1.0,
+}
+
+
+def adjust_brightness_contrast(image: np.ndarray, alpha: float, beta: float, beta_by_max: bool) -> np.ndarray:
+    dtype = image.dtype
+    max_value = MAX_VALUES_BY_DTYPE.get(dtype, 1.0)
+
+    img = image.astype(np.float32)
+    if alpha != 1.0:
+        img *= alpha
+    if beta != 0.0:
+        if beta_by_max:
+            img += beta * max_value
+        else:
+            img += beta * img.mean()
+
+    if np.issubdtype(dtype, np.integer):
+        img = np.clip(np.round(img), 0, max_value)
+    else:
+        img = np.clip(img, 0.0, max_value)
+    return img.astype(dtype)
 
 
 class DBTransforms:
     def __init__(self, transforms, keypoint_params):
-        self.transform = A.Compose([
-            *transforms,
-            ToTensorV2()
-        ], keypoint_params=keypoint_params)
+        self.flip_transform = None
+        self.brightness_contrast_transform = None
+        deterministic_transforms = []
 
-    def __call__(self, image, polygons):
+        for transform in transforms:
+            if isinstance(transform, A.HorizontalFlip):
+                self.flip_transform = transform
+            elif isinstance(transform, A.RandomBrightnessContrast):
+                self.brightness_contrast_transform = transform
+            else:
+                deterministic_transforms.append(transform)
+
+        deterministic_transforms.append(ToTensorV2())
+        self.transform = A.Compose(deterministic_transforms, keypoint_params=keypoint_params)
+
+    def __call__(self, image, polygons, seed=None):
         height, width = image.shape[:2]
 
         keypoints = []
@@ -20,6 +58,13 @@ class DBTransforms:
             keypoints = [point for polygon in polygons for point in polygon.reshape(-1, 2)]
             # keypoints가 이미지의 크기를 벗어나지 않도록 제한
             keypoints = self.clamp_keypoints(keypoints, width, height)
+
+        image, keypoints = self.apply_random_transforms(
+            image=image,
+            keypoints=keypoints,
+            width=width,
+            seed=seed,
+        )
 
         # Image transform / Geometric transform의 경우 keypoints를 변환
         transformed = self.transform(image=image, keypoints=keypoints)
@@ -44,8 +89,8 @@ class DBTransforms:
                 index += num_points
 
         return OrderedDict(image=transformed_image,
-                           polygons=transformed_polygons,
-                           inverse_matrix=inverse_matrix)
+                          polygons=transformed_polygons,
+                          inverse_matrix=inverse_matrix)
 
     def clamp_keypoints(self, keypoints, img_width, img_height):
         clamped_keypoints = []
@@ -91,3 +136,30 @@ class DBTransforms:
         x, y = delta_w // 2, delta_h // 2
         w, h = new_width, new_height
         return x, y, w, h
+
+    def apply_random_transforms(self, image, keypoints, width, seed=None):
+        rng = random.Random(seed) if seed is not None else random
+
+        if self.flip_transform is not None:
+            if rng.random() < self.flip_transform.p:
+                image = np.ascontiguousarray(image[:, ::-1, :])
+                flipped_keypoints = []
+                for kp in keypoints:
+                    x, y, *rest = kp
+                    flipped_keypoints.append((width - 1 - x, y, *rest))
+                keypoints = flipped_keypoints
+
+        if self.brightness_contrast_transform is not None:
+            if rng.random() < self.brightness_contrast_transform.p:
+                contrast_min, contrast_max = self.brightness_contrast_transform.contrast_limit
+                brightness_min, brightness_max = self.brightness_contrast_transform.brightness_limit
+                alpha = 1.0 + rng.uniform(contrast_min, contrast_max)
+                beta = rng.uniform(brightness_min, brightness_max)
+                image = adjust_brightness_contrast(
+                    image,
+                    alpha=alpha,
+                    beta=beta,
+                    beta_by_max=self.brightness_contrast_transform.brightness_by_max,
+                )
+
+        return image, keypoints
