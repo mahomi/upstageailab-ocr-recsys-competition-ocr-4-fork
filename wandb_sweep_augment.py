@@ -209,22 +209,54 @@ def train_with_sweep():
             f"HorizontalFlip: p={horizontal_flip_p}"
         )
 
-    # 1. RandomBrightnessContrast (현재 sweep 비활성화)
-    # brightness_limit = sweep_config.get('brightness_limit', 0.2)
-    # contrast_limit = sweep_config.get('contrast_limit', 0.2)
-    # brightness_contrast_p = sweep_config.get('brightness_contrast_p', 0.3)
-    # if apply_transform_params(
-    #     'albumentations.RandomBrightnessContrast',
-    #     {
-    #         'brightness_limit': brightness_limit,
-    #         'contrast_limit': contrast_limit,
-    #         'p': brightness_contrast_p,
-    #     },
-    #     'RandomBrightnessContrast',
-    # ):
-    #     applied_logs.append(
-    #         f"RandomBrightnessContrast: brightness_limit={brightness_limit}, contrast_limit={contrast_limit}, p={brightness_contrast_p}"
-    #     )
+    # RandomBrightnessContrast
+    brightness_limit = sweep_config.get('brightness_limit', 0.2)
+    contrast_limit = sweep_config.get('contrast_limit', 0.2)
+    brightness_contrast_p = sweep_config.get('brightness_contrast_p', 0.3)
+    if apply_transform_params(
+        'albumentations.RandomBrightnessContrast',
+        {
+            'brightness_limit': brightness_limit,
+            'contrast_limit': contrast_limit,
+            'p': brightness_contrast_p,
+        },
+        'RandomBrightnessContrast',
+    ):
+        applied_logs.append(
+            f"RandomBrightnessContrast: brightness_limit={brightness_limit}, contrast_limit={contrast_limit}, p={brightness_contrast_p}"
+        )
+
+    # VerticalFlip
+    vertical_flip_p = sweep_config.get('vertical_flip_p', 0.5)
+    if apply_transform_params(
+        'albumentations.VerticalFlip',
+        {
+            'p': vertical_flip_p,
+        },
+        'VerticalFlip',
+    ):
+        applied_logs.append(
+            f"VerticalFlip: p={vertical_flip_p}"
+        )
+
+    # ShiftScaleRotate
+    shift_limit = sweep_config.get('shift_limit', 0.05)
+    scale_limit = sweep_config.get('scale_limit', 0.1)
+    rotate_limit = sweep_config.get('rotate_limit', 15)
+    shift_scale_rotate_p = sweep_config.get('shift_scale_rotate_p', 0.5)
+    if apply_transform_params(
+        'albumentations.ShiftScaleRotate',
+        {
+            'shift_limit': shift_limit,
+            'scale_limit': scale_limit,
+            'rotate_limit': rotate_limit,
+            'p': shift_scale_rotate_p,
+        },
+        'ShiftScaleRotate',
+    ):
+        applied_logs.append(
+            f"ShiftScaleRotate: shift_limit={shift_limit}, scale_limit={scale_limit}, rotate_limit={rotate_limit}, p={shift_scale_rotate_p}"
+        )
 
     # 2. ColorJitter
     # color_jitter_brightness = sweep_config.get('color_jitter_brightness', 0.2)
